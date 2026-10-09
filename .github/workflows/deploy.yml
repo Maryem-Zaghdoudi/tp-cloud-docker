@@ -1,0 +1,51 @@
+
+name: Deploiement automatique
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deployer:
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Recuperer le code
+        uses: actions/checkout@v4
+
+      - name: Verifier index.html
+        run: |
+          if [ -f index.html ]; then
+            echo "index.html trouve"
+            wc -l index.html
+          else
+            echo "index.html manquant"
+            exit 1
+          fi
+
+      - name: Configurer GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Preparer les fichiers du site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Deployer sur GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
